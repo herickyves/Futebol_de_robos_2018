@@ -9,7 +9,7 @@
 #define m3a 24
 #define m3b 4
 #define pwm3 3
-#define encoder3A 1
+#define encoder3A 19
 
 int pwm[3] = {6,5,3};
 
@@ -34,7 +34,7 @@ void Initialize_Motors()
 
 void Initialize_Encoders()
 {
-  attachInterrupt(digitalPinToInterrupt(encoder1A), speedmotor1 , RISING);   
-  attachInterrupt(digitalPinToInterrupt(encoder2A), speedmotor2 , RISING);    
-  attachInterrupt(digitalPinToInterrupt(encoder3A), speedmotor3 , RISING);
+	attachInterrupt(digitalPinToInterrupt(encoder1A), speedmotor1 , RISING);   
+	attachInterrupt(digitalPinToInterrupt(encoder2A), speedmotor2 , RISING);    
+	attachInterrupt(digitalPinToInterrupt(encoder3A), speedmotor3 , RISING);
 }

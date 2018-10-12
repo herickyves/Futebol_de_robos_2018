@@ -1,9 +1,6 @@
-#include "functions_omni_3WD.h"
+#include "drive_functions_3WD.h"
+#include "verification_functions_3WD.h"
 #include "Initialization.h"
-
-float current_time, previous_time;
-float time_interval, inverted_time_interval;
-float pulses_sec_encoder1, pulses_sec_encoder2, pulses_sec_encoder3;
 
 void setup() 
 {
@@ -14,7 +11,7 @@ void setup()
 
 void loop() 
 {
-  int Angle = 60 + 180 ;
+  int Angle = 180 ;
   Set_Rotation(Angle);
   Set_Motor(pwm1,m1a,m1b,M[0]);
   Set_Motor(pwm2,m2a,m2b,M[1]);
@@ -23,28 +20,58 @@ void loop()
   Serial.println(Angle);
   Serial.println("");
   Verify_Speed();
+  Correct_Rotation();
+  Set_Motor(pwm1,m1a,m1b,PWM_New[0]);
+  Set_Motor(pwm2,m2a,m2b,PWM_New[1]);
+  Set_Motor(pwm3,m3a,m3b,PWM_New[2]);
 }
 
-void Verify_Speed()
+void Correct_Rotation()
 {
-  //calcule the time interval since last verification
-  current_time = millis();
-  time_interval = (current_time - previous_time) * 0.001;
-  inverted_time_interval = 1 / time_interval;
-
-  //calcule pulses per seconde of each encoder
-  pulses_sec_encoder1 = pulses1 * inverted_time_interval;
-  pulses_sec_encoder2 = pulses2 * inverted_time_interval;
-  pulses_sec_encoder3 = pulses3 * inverted_time_interval;
-  
-  Serial.print("Speed 1 = ");
-  Serial.print(pulses_sec_encoder1);
-  Serial.print(" Speed 2 = ");
-  Serial.print(pulses_sec_encoder2);
-  Serial.print(" Speed 3 = ");
-  Serial.println(pulses_sec_encoder3);
-  pulses1 = 0; 
-  pulses2 = 0; 
-  pulses3 = 0;
-  previous_time = current_time;
+  Find_Higher_Speed();
+  Compare_Actual_Speed_to_Expected();
+  Serial.print(" Corrigido 1 = ");
+  Serial.print(PWM_New[0]);
+  Serial.print(" Corrigido 2 = ");
+  Serial.print(PWM_New[1]);
+  Serial.print(" Corrigido 3 = ");
+  Serial.println(PWM_New[2]); 
 }
+
+void Compare_Actual_Speed_to_Expected()
+{
+  if(Higher_Speed_ID == 1)
+  {
+   if(Encoder_pps2 != 0)
+   PWM_New[1] = M[1] * (Higher_Speed / Encoder_pps2) ;
+   else
+   PWM_New[1] = M[1];
+   if(Encoder_pps3 != 0)
+   PWM_New[2] = M[2] * (Higher_Speed / Encoder_pps3) ;
+   else
+   PWM_New[2] = M[2];
+  }
+  else if(Higher_Speed_ID == 2)
+  {
+   if(Encoder_pps1 != 0)
+   PWM_New[0] = M[0] * (Higher_Speed / Encoder_pps1) ;
+   else
+   PWM_New[0] = M[0];
+   if(Encoder_pps3 != 0)
+   PWM_New[2] = M[2] * (Higher_Speed / Encoder_pps3) ;
+   else
+   PWM_New[2] = M[2];
+  }
+  else if(Higher_Speed_ID == 3)
+  {
+   if(Encoder_pps1 != 0)
+   PWM_New[0] = M[0] * (Higher_Speed / Encoder_pps1) ;
+   else
+   PWM_New[0] = M[0];
+   if(Encoder_pps2 != 0)
+   PWM_New[1] = M[1] * (Higher_Speed / Encoder_pps2) ;
+   else
+   PWM_New[1] = M[1];
+  }
+}
+
