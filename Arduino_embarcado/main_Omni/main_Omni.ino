@@ -1,12 +1,14 @@
 #include "drive_functions_3WD.h"
 #include "verification_functions_3WD.h"
 #include "Initialization.h"
+#include "Communication.h"
 
 void setup() 
 {
   Serial.begin(9600);
   Initialize_Motors();
   Initialize_Encoders();
+  Initialize_Radio();
 }
 
 void loop() 
@@ -43,35 +45,34 @@ void Compare_Actual_Speed_to_Expected()
   if(Higher_Speed_ID == 1)
   {
    if(Encoder_pps2 != 0)
-   PWM_New[1] = M[1] * (Higher_Speed / Encoder_pps2) ;
+    PWM_New[1] = M[1] *  ((Higher_Speed*M[1]) / (M[0]*Encoder_pps2));
    else
-   PWM_New[1] = M[1];
+    PWM_New[1] = M[1];
    if(Encoder_pps3 != 0)
-   PWM_New[2] = M[2] * (Higher_Speed / Encoder_pps3) ;
+    PWM_New[2] = M[2] *  ((Higher_Speed*M[2]) / (M[0]*Encoder_pps3));
    else
-   PWM_New[2] = M[2];
+    PWM_New[2] = M[2];
   }
   else if(Higher_Speed_ID == 2)
   {
    if(Encoder_pps1 != 0)
-   PWM_New[0] = M[0] * (Higher_Speed / Encoder_pps1) ;
+    PWM_New[0] = M[0] *  ((Higher_Speed*M[0]) / (M[1]*Encoder_pps1));
    else
-   PWM_New[0] = M[0];
+    PWM_New[0] = M[0];
    if(Encoder_pps3 != 0)
-   PWM_New[2] = M[2] * (Higher_Speed / Encoder_pps3) ;
+    PWM_New[2] = M[2] *  ((Higher_Speed*M[2]) / (M[1]*Encoder_pps3));
    else
-   PWM_New[2] = M[2];
+    PWM_New[2] = M[2];
   }
   else if(Higher_Speed_ID == 3)
   {
    if(Encoder_pps1 != 0)
-   PWM_New[0] = M[0] * (Higher_Speed / Encoder_pps1) ;
+   PWM_New[0] = M[0] *  ((Higher_Speed*M[0]) / (M[2]*Encoder_pps1));
    else
    PWM_New[0] = M[0];
    if(Encoder_pps2 != 0)
-   PWM_New[1] = M[1] * (Higher_Speed / Encoder_pps2) ;
+   PWM_New[1] = M[1] *  ((Higher_Speed*M[1]) / (M[2]*Encoder_pps2));
    else
    PWM_New[1] = M[1];
   }
 }
-

@@ -1,3 +1,8 @@
+//define em quantas direcoes diferentes o robo podera ir = 360/PossibleWays
+#define Possible_Ways 32
+//Define bateria utilizada para que o PWM ajuste e não passe da tensao nominal do motor
+#define Battery 12
+
 volatile long pulses1 = 0;
 volatile long pulses2 = 0;
 volatile long pulses3 = 0;
