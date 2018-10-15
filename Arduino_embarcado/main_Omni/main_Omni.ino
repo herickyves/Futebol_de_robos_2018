@@ -3,21 +3,23 @@
 #include "Initialization.h"
 #include "Communication.h"
 
+int Angle = 90 ;
+
 void setup() 
 {
   Serial.begin(9600);
   Initialize_Motors();
   Initialize_Encoders();
   Initialize_Radio();
-}
-
-void loop() 
-{
-  int Angle = 180 ;
   Set_Rotation(Angle);
   Set_Motor(pwm1,m1a,m1b,M[0]);
   Set_Motor(pwm2,m2a,m2b,M[1]);
   Set_Motor(pwm3,m3a,m3b,M[2]);
+}
+
+void loop() 
+{
+
   Serial.print("Angulo:");
   Serial.println(Angle);
   Serial.println("");
@@ -40,39 +42,12 @@ void Correct_Rotation()
   Serial.println(PWM_New[2]); 
 }
 
-void Compare_Actual_Speed_to_Expected()
+void interruptFunction()
 {
-  if(Higher_Speed_ID == 1)
+  if(radio.available())
   {
-   if(Encoder_pps2 != 0)
-    PWM_New[1] = M[1] *  ((Higher_Speed*M[1]) / (M[0]*Encoder_pps2));
-   else
-    PWM_New[1] = M[1];
-   if(Encoder_pps3 != 0)
-    PWM_New[2] = M[2] *  ((Higher_Speed*M[2]) / (M[0]*Encoder_pps3));
-   else
-    PWM_New[2] = M[2];
-  }
-  else if(Higher_Speed_ID == 2)
-  {
-   if(Encoder_pps1 != 0)
-    PWM_New[0] = M[0] *  ((Higher_Speed*M[0]) / (M[1]*Encoder_pps1));
-   else
-    PWM_New[0] = M[0];
-   if(Encoder_pps3 != 0)
-    PWM_New[2] = M[2] *  ((Higher_Speed*M[2]) / (M[1]*Encoder_pps3));
-   else
-    PWM_New[2] = M[2];
-  }
-  else if(Higher_Speed_ID == 3)
-  {
-   if(Encoder_pps1 != 0)
-   PWM_New[0] = M[0] *  ((Higher_Speed*M[0]) / (M[2]*Encoder_pps1));
-   else
-   PWM_New[0] = M[0];
-   if(Encoder_pps2 != 0)
-   PWM_New[1] = M[1] *  ((Higher_Speed*M[1]) / (M[2]*Encoder_pps2));
-   else
-   PWM_New[1] = M[1];
+    int Received_Angle = Receive_Command();
+    Set_Rotation(Received_Angle);
   }
 }
+

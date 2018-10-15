@@ -6,6 +6,7 @@ int Higher_Speed_ID;
 
 void Verify_Speed();
 void Find_Higher_Speed();
+void Compare_Actual_Speed_to_Expected();
 void speedmotor1();
 void speedmotor2();
 void speedmotor3();
@@ -51,6 +52,44 @@ void Find_Higher_Speed()
 		Higher_Speed_ID = 3;
 	}
 }
+
+void Compare_Actual_Speed_to_Expected()
+{
+  if(Higher_Speed_ID == 1)
+  {
+   if(Encoder_pps2 != 0)
+    PWM_New[1] = M[1] *  ((Higher_Speed*M[1]) / (M[0]*Encoder_pps2));
+   else
+    PWM_New[1] = M[1];
+   if(Encoder_pps3 != 0)
+    PWM_New[2] = M[2] *  ((Higher_Speed*M[2]) / (M[0]*Encoder_pps3));
+   else
+    PWM_New[2] = M[2];
+  }
+  else if(Higher_Speed_ID == 2)
+  {
+   if(Encoder_pps1 != 0)
+    PWM_New[0] = M[0] *  ((Higher_Speed*M[0]) / (M[1]*Encoder_pps1));
+   else
+    PWM_New[0] = M[0];
+   if(Encoder_pps3 != 0)
+    PWM_New[2] = M[2] *  ((Higher_Speed*M[2]) / (M[1]*Encoder_pps3));
+   else
+    PWM_New[2] = M[2];
+  }
+  else if(Higher_Speed_ID == 3)
+  {
+   if(Encoder_pps1 != 0)
+   PWM_New[0] = M[0] *  ((Higher_Speed*M[0]) / (M[2]*Encoder_pps1));
+   else
+   PWM_New[0] = M[0];
+   if(Encoder_pps2 != 0)
+   PWM_New[1] = M[1] *  ((Higher_Speed*M[1]) / (M[2]*Encoder_pps2));
+   else
+   PWM_New[1] = M[1];
+  }
+}
+
 void speedmotor1()
 {
 	  pulses1++;

@@ -7,7 +7,7 @@ const uint64_t pipes[2] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL };
 RF24 radio(9, 53);
 char info;
 int num=0;
-#define alarm
+#define alarm A0
 
 #define m1a 8
 #define m1b 7
@@ -65,5 +65,5 @@ void Initialize_Radio()
 	radio.setChannel(0);
 	radio.openReadingPipe(1,pipes[0]);
 	radio.startListening();
-	attachInterrupt(0, interruptFunction, FALLING);
+	//attachInterrupt(0, interruptFunction, FALLING);
 }
