@@ -1,3 +1,5 @@
+#include <PID_v1.h>
+
 #include <TimerOne.h>
 
 #include <SPI.h>
@@ -23,8 +25,8 @@ int pwm[3] = {6,5,3};
 int i=0;
 
 volatile long pulses[3] = {0,0,0};
-long timeE[3] = {0,0,0};
-long timeF[3] = {0,0,0};
+volatile long timeE[3] = {0,0,0};
+volatile long timeF[3] = {0,0,0};
 double speedE[3] = {0,0,0};
 double speedO[3] = {0,0,0};
  
@@ -37,6 +39,8 @@ float Angle_new=0;
 double Kp = 1;                                // PID proportional control Gain
 double Kd = 0; 
 double Ki = 1; 
+
+
 
 #define m1a 8
 #define m1b 7
@@ -59,11 +63,17 @@ double Ki = 1;
 #define alarm A0
 int c;
 double teta,valor[3]={0,0,0};
-float vmax = 170;
-int x=0, timex;
+float vmax = 210;
+int modo=0, timex;
 int velocidade_total;
 double valor_pwm_final[3]={0,0,0};
 double valor_pwm[3]={0,0,0};
+float w=0;
+float w_new=0;
+
+PID PID60(&speedE[0], &valor[0], &Mabs[0],Kp,Ki,Kd, DIRECT);
+PID PID180(&speedE[1], &valor[1], &Mabs[1],Kp,Ki,Kd, DIRECT);
+PID PID300(&speedE[2], &valor[2], &Mabs[2],Kp,Ki,Kd, DIRECT);
 
 void setup() {
   Serial.begin(9600);
@@ -92,7 +102,15 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(encoder2A), speedmotor2 , RISING);    
   attachInterrupt(digitalPinToInterrupt(encoder3A), speedmotor3 , RISING); 
 
-  Timer1.initialize(500000); // Inicializa o Timer1 e configura para um período de 0,75 segundo
+  PID60.SetMode(AUTOMATIC);
+  PID180.SetMode(AUTOMATIC);
+  PID300.SetMode(AUTOMATIC);
+
+  PID60.SetOutputLimits(0, 210);
+  PID180.SetOutputLimits(0, 210);
+  PID300.SetOutputLimits(0, 210);
+
+  Timer1.initialize(500000); // Inicializa o Timer1 e configura para um período de 0,50 segundo
   Timer1.attachInterrupt(zeravelocidade); // Configura a função zeravelocidade() como a função para ser chamada a cada interrupção do Timer1
 
 
@@ -103,7 +121,14 @@ void setup() {
 }
 
 void loop() {
-       Angle_new = 90;
+     modo=1;
+     if(modo==0){ //Modo parada
+       aciona_motor(0,m1a,m1b,0);
+       aciona_motor(1,m2a,m2b,0);
+       aciona_motor(2,m3a,m3b,0);
+     }
+     else if(modo==1){ // Modo movimento linear
+       Angle_new = 20;
        while(Angle_new!=Angle)//só executa uma vez quando o comando muda para evitar que o valor do PWM seja reescrito pelo valor teórico toda vez que o robô receba um comando
        {
           Angle=Angle_new;
@@ -123,10 +148,12 @@ void loop() {
            // velocidade(0);
            // velocidade(1);
            // velocidade(2);
-            delay(100);
+            delay(500);
           }
         }
- 
+        PID60.Compute();
+        PID180.Compute();
+        PID300.Compute();
         verifica(0,m1a,m1b);
         verifica(1,m2a,m2b);
         verifica(2,m3a,m3b);
@@ -137,7 +164,7 @@ void loop() {
        // velocidade(1);
        // velocidade(2);
         
-       /* Serial.print("V1 SpeedE:");
+        Serial.print("V1 SpeedE:");
         Serial.println(speedE[0]);
         Serial.print("V1 M:");
         Serial.println(M[0]);
@@ -157,28 +184,70 @@ void loop() {
         Serial.println(M[2]);
         Serial.print("V3 valor:");
         Serial.println(valor[2]);
-        Serial.println(" ");*/
+        Serial.println(" ");
 
         
-        delay(100);
+        //delay(100);
+     }
+     else if (modo==2){ //Modo movimento angular
+       
+       w_new = 0.25;
+       while(w_new!=w)//só executa uma vez quando o comando muda para evitar que o valor do PWM seja reescrito pelo valor teórico toda vez que o robô receba um comando
+       {
+          w=w_new;
+          turn_o(w,vmax);
+  
+          valor[0] = abs(M[0]);
+          valor[1] = abs(M[1]);
+          valor[2] = abs(M[2]);
+         
+          Serial.println("W:");
+          Serial.println(w);
+          
+          while(speedE[0]!=0 || speedE[1]!=0 || speedE[2]!=0){
+            aciona_motor(0,m1a,m1b,0);
+            aciona_motor(1,m2a,m2b,0);
+            aciona_motor(2,m3a,m3b,0);
+           // velocidade(0);
+           // velocidade(1);
+           // velocidade(2);
+            delay(500);
+          }
+       }
+       
+       verifica(0,m1a,m1b);
+       verifica(1,m2a,m2b);
+       verifica(2,m3a,m3b);
+
+       delay(100);
+     }
 }
 
 void verifica(int id_motor,int pa,int pb)//Verifica e corrigi a velocidade
 {
-  if(abs((abs(M[id_motor])-speedE[id_motor])/M[id_motor])>0)//Checa a diferença entre a velocidade do encoder e a velocidade desejada
-        { 
-          if(speedE[id_motor] != 0)
-          { 
-            valor[id_motor] = valor[id_motor] * ((abs(M[id_motor])/speedE[id_motor]));//corrigi o pwm para alcançar a velocidade desejada 
+  //if(abs((abs(M[id_motor])-speedE[id_motor])/M[id_motor])>0)//Checa a diferença entre a velocidade do encoder e a velocidade desejada
+        //{ 
+          //if(speedE[id_motor] != 0)
+          //{ 
+            //valor[id_motor] = valor[id_motor] * ((abs(M[id_motor])/speedE[id_motor]));//corrigi o pwm para alcançar a velocidade desejada 
             aciona_motor(id_motor,pa,pb, valor[id_motor]);
-            if(valor[id_motor]>210)valor[id_motor]=210;// Certifica-se que a velocidade corrigida não passe de 210rpm
-          }
-          else
-          {
-            aciona_motor(id_motor,pa,pb,230);//tranco se velocidade for 0 
-          }
-        }
+            //if(valor[id_motor]>210)valor[id_motor]=210;// Certifica-se que a velocidade corrigida não passe de 210rpm
+          //}
+          //else
+          //{
+            //if(modo==1)
+              //aciona_motor(id_motor,pa,pb,150);//tranco se velocidade for 0 
+            //else
+              //aciona_motor(id_motor,pa,pb,100);
+          //}
+        //}
+        //delay(1);
         //else{aciona_motor(id_motor,pa,pb,valor);}
+}
+void turn_o(float w,int vmax){
+  for(i=0;i<3;i++){
+         M[i]=w*vmax;
+  }
 }
 void move_o(int o,int v)
 {    
@@ -186,7 +255,7 @@ void move_o(int o,int v)
     {
       teta = A[i] - o;
       teta = (teta*PI)/180;
-      M[i] = vmax*sin(teta);
+      M[i] = v*sin(teta);
       Mabs[i] = abs(M[i]);  
       Serial.print(i);
       Serial.print(" : ");
@@ -269,11 +338,13 @@ void zeravelocidade(){//zera a velocidade se passar 1 segundo sem ela mudar
 /*void interruptFunction()
 {
   if(radio.available()){
+        detachInterrupt(0);
         radio.read(&Received_CHAR, sizeof(Received_CHAR));
         Received_INT = int(Received_CHAR);
         Angle_new = ( Received_INT - Initial_CHAR_Convert_to_INT ) * (360 / Possible_Ways);//converte CHAR em INT
         Serial.print("Recebido: ");
         Serial.println(Received_CHAR);
+        attachInterrupt(0, interruptFunction, FALLING);
         /*if(Received_INT == 98)
         {
           velocidade_total = 210;
